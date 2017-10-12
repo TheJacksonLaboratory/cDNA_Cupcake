@@ -13,7 +13,6 @@ INTINF = 999999
 class ContiVec:
     """
     Original struct: 'BC'
-
     """
     def __init__(self, size):
         self.baseC = np.zeros(size, dtype=np.int) # this was .B in the original code, base coverage
@@ -26,14 +25,13 @@ class BranchSimple:
     BranchSimple is designed for just creating exons from PacBio's GMAP results
     Does not use Illumina
     """
-    def __init__(self, transfrag_filename, cov_threshold=2, min_aln_coverage=.99, min_aln_identity=.85, is_fq=False,
-                 max_5_diff=1000, max_3_diff=100):
+    def __init__(self, transfrag_filename, cov_threshold=2, min_aln_coverage=.99, min_aln_identity=.85, is_fq=False):
         self.contiVec = None # current ContiVec object
         self.exons = None
         #self.MIN_EXON_SIZE = max_fuzzy_junction
 
-        self.max_5_diff = max_5_diff
-        self.max_3_diff = max_3_diff
+#        self.max_5_diff = max_5_diff
+#        self.max_3_diff = max_3_diff
 
         self.transfrag_filename = transfrag_filename
         self.transfrag_len_dict = dict((r.id.split()[0], len(r.seq)) for r in SeqIO.parse(open(transfrag_filename), 'fastq' if is_fq else 'fasta'))
@@ -92,7 +90,6 @@ class BranchSimple:
     def parse_transfrag2contig(self, gmap_sam_records, skip_5_exon_alt=True):
         """
         GMAP SAM file MUST BE SORTED! (same criterion as cufflinks)
-
         Goes through a set of overlapping GMAP records (strand-aware)
         Fill in the baseC (base coverage)
         """
@@ -242,7 +239,6 @@ class BranchSimple:
         (2) call exons by exon_finding
         (3) go through each record, get the list of "nodes" they corresspond to
         (4) collapse identical records (53mergeing)
-
         Write out to GTF format
         """
         self.parse_transfrag2contig(records, skip_5_exon_alt)
@@ -262,7 +258,7 @@ class BranchSimple:
             result.append((r.qID, r.flag.strand, m))
 
         result_merged = list(result)
-        iterative_merge_transcripts(result_merged, node_d, allow_extra_5_exons, self.max_5_diff, self.max_3_diff)
+        iterative_merge_transcripts(result_merged, node_d, allow_extra_5_exons)
 
         print >> sys.stderr, "merged {0} down to {1} transcripts".format(len(result), len(result_merged))
 
@@ -296,7 +292,7 @@ class BranchSimple:
 
         return result, result_merged
 
-def iterative_merge_transcripts(result_list, node_d, merge5, max_5_diff, max_3_diff):
+def iterative_merge_transcripts(result_list, node_d, merge5):
     """
     result_list --- list of (qID, strand, binary exon sparse matrix)
     """
@@ -311,7 +307,8 @@ def iterative_merge_transcripts(result_list, node_d, merge5, max_5_diff, max_3_d
             if (strand1 != strand2) or (m1.nonzero()[1][-1] < m2.nonzero()[1][0]):
                 break
             else:
-                flag, m3 = compare_exon_matrix(m1, m2, node_d, strand1, merge5, max_5_diff, max_3_diff)
+                merge5=True
+                flag, m3 = compare_exon_matrix(m1, m2, node_d, strand1, merge5)
                 if flag:
                     result_list[i] = (id1+','+id2, strand1, m3)
                     result_list.pop(j)
@@ -320,16 +317,14 @@ def iterative_merge_transcripts(result_list, node_d, merge5, max_5_diff, max_3_d
         i += 1
 
         
-def compare_exon_matrix(m1, m2, node_d, strand, merge5, max_5_diff, max_3_diff):
+def compare_exon_matrix(m1, m2, node_d, strand, merge5):
     """
     m1, m2 are 1-d array where m1[0, i] is 1 if it uses the i-th exon, otherwise 0
     compare the two and merge them if they are compatible
     (i.e. only differ by first/last exon ends)
-
     merge5 -- if True, allow extra 5' exons as long as the rest is the same
               if False, then m1 and m2 must have the same first (5') exon and only allowed
                         if the difference is the very start
-
     return {True|False}, {merged array|None}
     """
     l1 = m1.nonzero()[1]
@@ -356,10 +351,10 @@ def compare_exon_matrix(m1, m2, node_d, strand, merge5, max_5_diff, max_3_diff):
     # if i = 0, first exon matches, so no need to check
     # if - strand, then need to check for max_3_diff instead of max_5_diff
     # if + strand, then need to check for max_5_diff unless merge5 is True
-    if i > 0 and strand == '+' and (not merge5) and (node_d[l1[i-1]].end-node_d[l1[0]].start > max_5_diff):
-        return False, None
-    if i > 0 and strand == '-' and (node_d[l1[i-1]].end-node_d[l1[0]].start > max_3_diff):
-        return False, None
+#    if i > 0 and strand == '+' and (not merge5) and (node_d[l1[i-1]].end-node_d[l1[0]].start > max_5_diff):
+#        return False, None
+#    if i > 0 and strand == '-' and (node_d[l1[i-1]].end-node_d[l1[0]].start > max_3_diff):
+#        return False, None
 
     #pdb.set_trace()
     for j in xrange(i, min(n1, n2+i)):
@@ -374,17 +369,21 @@ def compare_exon_matrix(m1, m2, node_d, strand, merge5, max_5_diff, max_3_diff):
         for k in xrange(j-i+1, n2):
             # case 1: this is the 3' end, check that there are no additional 3' exons
             #         AND that the 3' exon for l2 is not more than <max_3_diff> bp longer
-            if (strand=='+' and (node_d[l2[k-1]].end!=node_d[l2[k]].start or node_d[l2[k]].end-node_d[l2[j-i]].end>max_3_diff)): return False, None
+#            if ((strand=='+') and (node_d[l2[k-1]].end!=node_d[l2[k]].start or node_d[l2[k]].end-node_d[l2[j-i]].end>max_3_diff)): return False, None
+            if (strand=='+' and node_d[l2[k-1]].end!=node_d[l2[k]].start): return False, None
             # case 2: this is the 5' end, check that there are no additional 5' exons unless allowed
-            if (strand=='-' and (not merge5) and (node_d[l2[k-1]].end!=node_d[l2[k]].start or node_d[l2[k]].end-node_d[l2[j-i]].end>max_5_diff)): return False, None
+#            if (strand=='-' and (not merge5) and (node_d[l2[k-1]].end!=node_d[l2[k]].start or node_d[l2[k]].end-node_d[l2[j-i]].end>max_5_diff)): return False, None
+            if (strand=='-' and not merge5 and node_d[l2[k-1]].end!=node_d[l2[k]].start): return False, None
         m1[0, l2[j-i+1]:] = m1[0, l2[j-i+1]:] + m2[0, l2[j-i+1]:]
         return True, m1
     elif j-i == n2-1: # we've reached end of l2, there's more l1
         for k in xrange(j+1, n1):
             # case 1, but for m1
-            if (strand=='+' and (node_d[l1[k-1]].end!=node_d[l1[k]].start or node_d[l1[k]].end-node_d[l1[j]].end>max_3_diff)): return False, None
+#            if ((strand=='+') and (node_d[l1[k-1]].end!=node_d[l1[k]].start or node_d[l1[k]].end-node_d[l1[j]].end>max_3_diff)): return False, None
+            if (strand=='+' and node_d[l1[k-1]].end!=node_d[l1[k]].start): return False, None
             # case 2, but for m1
-            if (strand=='-' and (not merge5) and (node_d[l1[k-1]].end!=node_d[l1[k]].start or node_d[l1[k]].end-node_d[l1[j]].end>max_5_diff)): return False, None
+#            if (strand=='-' and (not merge5) and (node_d[l1[k-1]].end!=node_d[l1[k]].start or node_d[l1[k]].end-node_d[l1[j]].end>max_5_diff)): return False, None
+            if (strand=='-' and not merge5 and node_d[l1[k-1]].end!=node_d[l1[k]].start): return False, None
         return True, m1
 
     raise Exception, "Should not happen"
@@ -392,7 +391,6 @@ def compare_exon_matrix(m1, m2, node_d, strand, merge5, max_5_diff, max_3_diff):
 
 def trim_exon_left_to_right(m1, m2, node_d, max_distance):
     """
-
     """
     l1 = m1.nonzero()[1]
     l2 = m2.nonzero()[1]
@@ -437,7 +435,6 @@ def exon_matching(exon_tree, ref_exon, match_extend_tolerate_left, match_extend_
     exon_tree --- an IntervalTree made from .baseC/.altC using exon detection; probably only short read data
     ref_exon --- an Interval representing an exon; probably from PacBio
     match_extend_tolerate --- maximum difference between the matched start/end
-
     find a continuous exon path (consisting of 1 or more nodes for which the intervals must be adjacent)
     in exon_tree that matches to ref_exon
     """
@@ -458,9 +455,3 @@ def exon_matching(exon_tree, ref_exon, match_extend_tolerate_left, match_extend_
         return None
     else: # ack! could not find evidence for this :<
         return None
-
-
-
-                
-                
-    

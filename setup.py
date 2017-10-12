@@ -4,7 +4,7 @@ import numpy as np
 
 
 __author__ = "etseng@pacb.com"
-version = "3.9"
+version = "3.7"
 
 ext_modules = [
                 Extension("cupcake.tofu.branch.intersection_unique",
@@ -35,9 +35,9 @@ setup(
                'cupcake/tofu/get_abundance_post_collapse.py',
                'cupcake/tofu/make_sam_by_isoforms.py',
                'cupcake/tofu/filter_by_count.py',
+               'cupcake/tofu/filter_away_microexons.py',
                'cupcake/tofu/filter_away_subset.py',
-               'cupcake/tofu/process_blasr_to_read_stat.py', 
-	       'cupcake/tofu/process_read_stats_to_count.py',
+               'cupcake/tofu/process_blasr_to_read_stat.py',
                'cupcake/tofu/fusion_finder.py',
                'cupcake/tofu/counting/chain_samples.py',
                'cupcake/tofu/counting/chain_fusion_samples.py',

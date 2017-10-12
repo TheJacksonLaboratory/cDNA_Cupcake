@@ -70,6 +70,12 @@ def generate_batch_cmds(csv_filename, dirname, cmd_filename, cpus):
             print >> sys.stderr, "Directory {0} does not exist! Abort!".format(d2)
             sys.exit(-1)
 
+        cmd_f.write("#!/bin/bash\n")
+        cmd_f.write("source /projects/banchereau-lab/ISO-seq/annotation_processing/pitchfork_ToFU2_dev/setup-env.sh\n")
+        cmd_f.write("module load gcc/4.9.2\n")
+        cmd_f.write("PATH=$PATH:/projects/banchereau-lab/ISO-seq/annotation_processing/cDNA_Cupcake/sequence\n")
+        cmd_f.write("cd $PBS_O_WORKDIR\n")
+
         cmd_f.write("cd {0}\n".format(real_upath(d2)))
 
         fa_files, fq_files = preprocess_flnc_split_if_necessary(d2, int(r['size']), flnc_split=20000)
