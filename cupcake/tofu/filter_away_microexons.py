@@ -57,12 +57,12 @@ def sanity_check_collapse_input(input_prefix):
            f.write(i)
            f.write("\n")
         f.close
-        f = open('pbids.abundance.txt','w')
+        f = open('pbids.gff.txt','w')
         for i in pbids2:
            f.write(i)
            f.write("\n")
         f.close
-        f = open('pbids.gff.txt','w')
+        f = open('pbids.abundance.txt','w')
         for i in pbids3:
            f.write(i)
            f.write("\n")

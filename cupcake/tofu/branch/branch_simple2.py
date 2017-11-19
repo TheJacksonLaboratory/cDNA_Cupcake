@@ -61,9 +61,11 @@ class BranchSimple:
             if r.sID == '*':
                 ignored_fout.write("{0}\tUnmapped.\n".format(r.qID))
             elif r.qCoverage < self.min_aln_coverage:
-                ignored_fout.write("{0}\tCoverage {1:.3f} too low.\n".format(r.qID, r.qCoverage))
+                sqcoverage=str(r.qCoverage)                
+                ignored_fout.write("{0}\tCoverage too low.\n".format(r.qID, sqcoverage))
             elif r.identity < self.min_aln_identity:
-                ignored_fout.write("{0}\tIdentity {1:.3f} too low.\n".format(r.qID, r.identity))
+                sidentity=str(r.identity)
+                ignored_fout.write("{0}\tIdentity too low.\n".format(r.qID, sidentity))
             else:
                 break
         try:
@@ -76,9 +78,11 @@ class BranchSimple:
                 print >> sys.stderr, "SAM file is NOT sorted. ABORT!"
                 sys.exit(-1)
             if r.qCoverage < self.min_aln_coverage:
-                ignored_fout.write("{0}\tCoverage {1:.3f} too low.\n".format(r.qID, r.qCoverage))
+                sqcoverage=str(r.qCoverage)
+                ignored_fout.write("{0}\tCoverage too low.\n".format(r.qID, sqcoverage))
             elif r.identity < self.min_aln_identity:
-                ignored_fout.write("{0}\tIdentity {1:.3f} too low.\n".format(r.qID, r.identity))
+                sidentity=str(r.identity)
+                ignored_fout.write("{0}\tIdentity  too low.\n".format(r.qID, sidentity))
             elif r.sID != records[0].sID or r.sStart > max(x.sEnd for x in records):
                 yield sep_by_strand(records)
                 records = [r]
