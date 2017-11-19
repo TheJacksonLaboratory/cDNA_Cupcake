@@ -82,7 +82,7 @@ def add_batch(batch_index, pCS, orphans, fasta_d, cpus):
 
     return pCS, orphans
 
-def main(cpus, dun_make_bins=False, dun_use_partial=False, random-seed=None):
+def main(cpus, dun_make_bins=False, dun_use_partial=False):
     print "Indexing isoseq_flnc.fasta using LazyFastaReader..."
     d = LazyFastaReader('isoseq_flnc.fasta')
 
@@ -179,4 +179,4 @@ if __name__ == "__main__":
     if args.random_seed is not None:
         random.seed(args.random_seed)
 
-    main(args.cpus, args.dun_make_bins, args.dun_use_partial, args.random-seed)
+    main(args.cpus, args.dun_make_bins, args.dun_use_partial)
