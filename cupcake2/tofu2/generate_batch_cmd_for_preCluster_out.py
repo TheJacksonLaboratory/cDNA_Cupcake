@@ -76,6 +76,11 @@ def generate_batch_cmds(csv_filename, dirname, cmd_filename, cpus):
 
         ice2_aligner = 'blasr' if int(r['size']) <= 20000 else 'daligner'
 
+        cmd_f.write("#!/bin/bash\n")
+        cmd_f.write("source /projects/banchereau-lab/ISO-seq/annotation_processing/pitchfork_ToFU2_dev/setup-env.sh\n")
+        cmd_f.write("module load gcc/7.1.0\n")
+        cmd_f.write("PATH=$PATH:/projects/banchereau-lab/ISO-seq/annotation_processing/cDNA_Cupcake/sequence\n")
+        cmd_f.write("cd $PBS_O_WORKDIR\n")
         cmd_f.write("run_IceInit2.py {fa} init.uc.pickle --aligner_choice=blasr --cpus={c}\n".format(c=cpus, fa=fa_files[0]))
         cmd_f.write("run_IceIterative2.py {fas} {fqs} isoseq_flnc.fasta . ".format(fas=",".join(fa_files), fqs=",".join(fq_files)) + \
                     "--init_uc_pickle=init.uc.pickle --aligner_choice={aln} ".format(aln=ice2_aligner) + \

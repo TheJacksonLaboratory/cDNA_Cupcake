@@ -35,13 +35,31 @@ def generate_batch_cmds_for_polishing(chunk_prefix, nfl_filename, subread_xml, c
         os.symlink(full_fasta, 'final.consensus.fasta')
         os.chdir('../../')
         f = open(os.path.join(dirname, dirname+'.sh'), 'w')
+        # added to make compatible to the Torque/Moab cluster at JAX 2018 April 27 - ADM
+        f.write("#!/bin/bash\n")
+        f.write("source /projects/banchereau-lab/ISO-seq/annotation_processing/pitchfork_ToFU2_dev/setup-env.sh\n")
+        f.write("module load gcc/7.1.0\n")
+        f.write("module load graphviz\n")
+        f.write("PATH=$PATH:/projects/banchereau-lab/ISO-seq/annotation_processing/cDNA_Cupcake/sequence\n")
+        f.write("cd $PBS_O_WORKDIR\n")
+
         f.write("run_IcePartial2.py all {nfl} {p}.consensus.fasta {p}.nfl.pickle "\
                 "--root_dir {d} --aligner_choice=daligner --cpus={c}\n".format(\
                 p=dirname, nfl=nfl_filename, d=real_upath(dirname), c=cpus))
-        f.write("run_IceArrow2.py all {d} --subread_xml {s} --blasr_nproc {c} --arrow_nproc {c} --hq_min_full_length_reads=2\n".format(\
+#
+# was in ToFU2 
+#        f.write("run_IceArrow2.py all {d} --subread_xml {s} --blasr_nproc {c} --arrow_nproc {c} --hq_min_full_length_reads=2\n".format(\
+#                d=real_upath(dirname), s=subread_xml, c=cpus))
+# for JAX, we want hq_min_full_length_reads=1
+#                 2018 April 27 -- ADM
+        f.write("run_IceArrow2.py all {d} --subread_xml {s} --blasr_nproc {c} --arrow_nproc {c} --hq_min_full_length_reads=1\n".format(\
                 d=real_upath(dirname), s=subread_xml, c=cpus))
+
         f.close()
-        cmd_f.write("qsub -cwd -S /bin/bash -pe smp 12 -V {sh}\n".format(sh=real_upath(f.name)))
+# 
+# was in ToFU2
+#        cmd_f.write("qsub -cwd -S /bin/bash -pe smp 12 -V {sh}\n".format(sh=real_upath(f.name)))
+         cmd_f.write("qsub -q {q} -l walltime={w} -l nodes=1:ppn={c} {sh}\n".format(sh=real_upath(f.name), c=cpus, w=walltime, q=queue))
 
 
 
@@ -56,7 +74,13 @@ if __name__ == "__main__":
     parser.add_argument("subread_xml", help="Subread XML file")
     parser.add_argument("--cpus", default=12, type=int, help="Number of CPUs (default: 12)")
     parser.add_argument("--cmd_filename", default='cmds', help="Output command filename (default: cmds)")
+#
+# add additional arguments for running
+#
+    parser.add_argument("--walltime", default='24:00:00', help="walltime for queue (default: 24:00:00)")
+    parser.add_argument("--queue", default='batch', help="queue (default: batch)")
+
     args = parser.parse_args()
 
     generate_batch_cmds_for_polishing(args.chunk_prefix, args.nfl_filename, args.subread_xml,
-                                      args.cpus, args.cmd_filename)
+                                      args.cpus, args.cmd_filename, args.walltime, args.queue)

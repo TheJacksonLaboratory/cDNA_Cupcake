@@ -334,6 +334,10 @@ class IceArrow2(IceFiles2):
                      format(f=bin_sh, first=first, last=last))
         with open(bin_sh, 'w') as f:
             f.write("#!/bin/bash\n")
+            f.write("cd $PBS_O_WORKDIR\n")
+            f.write("source /projects/banchereau-lab/ISO-seq/annotation_processing/pitchfork_ToFU2_dev/setup-env.sh\n")
+            f.write("module load gcc/7.1.0\n")
+
             f.write("\n".join(cmds))
         return bin_sh
 
