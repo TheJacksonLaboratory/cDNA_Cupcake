@@ -70,7 +70,6 @@ def generate_batch_cmds(csv_filename, dirname, cmd_filename, cpus):
             print >> sys.stderr, "Directory {0} does not exist! Abort!".format(d2)
             sys.exit(-1)
 
-        cmd_f.write("cd {0}\n".format(real_upath(d2)))
 
         fa_files, fq_files = preprocess_flnc_split_if_necessary(d2, int(r['size']), flnc_split=20000)
 
@@ -81,6 +80,7 @@ def generate_batch_cmds(csv_filename, dirname, cmd_filename, cpus):
         cmd_f.write("module load gcc/7.1.0\n")
         cmd_f.write("PATH=$PATH:/projects/banchereau-lab/ISO-seq/annotation_processing/cDNA_Cupcake/sequence\n")
         cmd_f.write("cd $PBS_O_WORKDIR\n")
+        cmd_f.write("cd {0}\n".format(real_upath(d2)))
         cmd_f.write("run_IceInit2.py {fa} init.uc.pickle --aligner_choice=blasr --cpus={c}\n".format(c=cpus, fa=fa_files[0]))
         cmd_f.write("run_IceIterative2.py {fas} {fqs} isoseq_flnc.fasta . ".format(fas=",".join(fa_files), fqs=",".join(fq_files)) + \
                     "--init_uc_pickle=init.uc.pickle --aligner_choice={aln} ".format(aln=ice2_aligner) + \

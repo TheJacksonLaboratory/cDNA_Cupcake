@@ -3,7 +3,7 @@ import glob
 from csv import DictReader
 from pbtranscript.Utils import real_upath
 
-def generate_batch_cmds_for_polishing(chunk_prefix, nfl_filename, subread_xml, cpus, cmd_filename):
+def generate_batch_cmds_for_polishing(chunk_prefix, nfl_filename, subread_xml, cpus, cmd_filename, walltime, queue):
 
     subread_xml = real_upath(subread_xml)
     nfl_filename = real_upath(nfl_filename)
@@ -34,15 +34,14 @@ def generate_batch_cmds_for_polishing(chunk_prefix, nfl_filename, subread_xml, c
         os.symlink(full_pickle, 'final.pickle')
         os.symlink(full_fasta, 'final.consensus.fasta')
         os.chdir('../../')
-        f = open(os.path.join(dirname, dirname+'.sh'), 'w')
         # added to make compatible to the Torque/Moab cluster at JAX 2018 April 27 - ADM
+        f = open(os.path.join(dirname, dirname+'.sh'), 'w')
         f.write("#!/bin/bash\n")
         f.write("source /projects/banchereau-lab/ISO-seq/annotation_processing/pitchfork_ToFU2_dev/setup-env.sh\n")
         f.write("module load gcc/7.1.0\n")
         f.write("module load graphviz\n")
         f.write("PATH=$PATH:/projects/banchereau-lab/ISO-seq/annotation_processing/cDNA_Cupcake/sequence\n")
         f.write("cd $PBS_O_WORKDIR\n")
-
         f.write("run_IcePartial2.py all {nfl} {p}.consensus.fasta {p}.nfl.pickle "\
                 "--root_dir {d} --aligner_choice=daligner --cpus={c}\n".format(\
                 p=dirname, nfl=nfl_filename, d=real_upath(dirname), c=cpus))
@@ -59,7 +58,7 @@ def generate_batch_cmds_for_polishing(chunk_prefix, nfl_filename, subread_xml, c
 # 
 # was in ToFU2
 #        cmd_f.write("qsub -cwd -S /bin/bash -pe smp 12 -V {sh}\n".format(sh=real_upath(f.name)))
-         cmd_f.write("qsub -q {q} -l walltime={w} -l nodes=1:ppn={c} {sh}\n".format(sh=real_upath(f.name), c=cpus, w=walltime, q=queue))
+        cmd_f.write("qsub -q {q} -l walltime={w} -l nodes=1:ppn={c} {sh}\n".format(sh=real_upath(f.name), c=cpus, w=walltime, q=queue))
 
 
 
